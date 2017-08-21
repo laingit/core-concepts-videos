@@ -1,2 +1,2 @@
-(ns fulcro-template.cards
+(ns core-concepts.cards
   (:require [fulcro-template.intro]))
