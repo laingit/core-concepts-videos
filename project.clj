@@ -5,13 +5,13 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.908"]
                  [com.stuartsierra/component "0.3.2"]
-                 [fulcrologic/fulcro "1.0.0-beta8" :exclusions [commons-codec]]]
+                 [fulcrologic/fulcro "1.0.0-beta8"]]
 
   :profiles {:dev {:source-paths ["src/dev" "src/main" "src/cards"]
                    :dependencies [[binaryage/devtools "0.9.4"]
                                   [org.clojure/tools.namespace "0.3.0-alpha4"]
-                                  [figwheel-sidecar "0.5.13"]
-                                  [devcards "0.2.3"]]}}
+                                  [figwheel-sidecar "0.5.13" :exclusions [org.clojure/tools.nrepl]]
+                                  [devcards "0.2.3" :exclusions [cljsjs/react cljsjs/react-dom]]]}}
 
   :source-paths ["src/main"]
   :clean-targets ^{:protect false} ["target" "resources/public/js"]

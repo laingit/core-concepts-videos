@@ -3,6 +3,7 @@
     [clojure.pprint :refer [pprint]]
     [clojure.tools.namespace.repl :as tools-ns :refer [set-refresh-dirs]]
     [com.stuartsierra.component :as component]
+    core-concepts.server
     [figwheel-sidecar.system :as fig]))
 
 ;;FIGWHEEL
@@ -28,43 +29,39 @@
      (swap! figwheel component/start)
      (fig/cljs-repl (:figwheel-system @figwheel)))))
 
-(comment
-  ;; ==================== SERVER ====================
-  (set-refresh-dirs "src/dev" "src/main" "src/cards")
+;; ==================== SERVER ====================
+(set-refresh-dirs "src/dev" "src/main" "src/cards")
 
-  (defn started? [sys]
-    (-> sys :config :value))
+(defn started? [sys]
+  (-> sys :config :value))
 
-  (defonce system (atom nil))
-  (def cfg-paths {:dev "config/dev.edn"})
+(defonce system (atom nil))
 
+(letfn [(refresh [& args] {:pre [(not @system)]} (apply tools-ns/refresh args))
+        (init [path] {:pre [(not (started? @system))]}
+          (when-let [new-system (core-concepts.server/make-system "config/dev.edn")]
+            (reset! system new-system)))
 
-  (letfn [(refresh [& args] {:pre [(not @system)]} (apply tools-ns/refresh args))
-          (init [path] {:pre [(not (started? @system))]}
-            (when-let [new-system (fulcro-template.server/make-system "config/dev.edn")]
-              (reset! system new-system)))
+        (start []
+          {:pre [@system (not (started? @system))]}
+          (swap! system component/start))
 
-          (start []
-            {:pre [@system (not (started? @system))]}
-            (swap! system component/start))
+        (stop
+          []
+          (when (started? @system)
+            (swap! system component/stop))
+          (reset! system nil))]
 
-          (stop
-            []
-            (when (started? @system)
-              (swap! system component/stop))
-            (reset! system nil))]
+  (defn go
+    "Initialize the server and start it."
+    ([] (go :dev))
+    ([path] {:pre [(not @system) (not (started? @system))]}
+     (init path)
+     (start)))
 
-
-    (defn go
-      "Initialize the server and start it."
-      ([] (go :dev))
-      ([path] {:pre [(not @system) (not (started? @system))]}
-       (init path)
-       (start)))
-
-    (defn restart
-      "Stop, refresh, and restart the server."
-      []
-      (stop)
-      (refresh :after 'user/go))))
+  (defn restart
+    "Stop, refresh, and restart the server."
+    []
+    (stop)
+    (refresh :after 'user/go)))
 

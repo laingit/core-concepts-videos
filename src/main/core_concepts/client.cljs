@@ -1,57 +1,63 @@
 (ns core-concepts.client
+  (:require-macros [core-concepts.client :refer [defident]])
   (:require
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
     [fulcro.client.mutations :refer [defmutation]]
-    [fulcro.client.core :as fc]))
+    [fulcro.ui.bootstrap3 :as b]
+    [fulcro.client.core :as fc]
+    [fulcro.client.data-fetch :as df]))
 
-(defn person-ident [person-or-id]
-  (if (map? person-or-id)
-    [:PERSON/by-id (:db/id person-or-id)]
-    [:PERSON/by-id person-or-id]))
+(defident person-ident [person-or-id] :PERSON/by-id)
+(defident job-ident [job-or-id] :JOB/by-id)
+(defident duty-ident [job-or-id] :DUTY/by-id)
 
-(defn set-liked*
-  [state-map id yes-no]
-  (update-in state-map (person-ident id) assoc :tony-likes? yes-no))
+(defui ^:once Duty
+  static om/IQuery
+  (query [this] [:db/id :duty/name])
+  static om/Ident
+  (ident [this props] (duty-ident props))
+  Object
+  (render [this]
+    (let [{:keys [db/id duty/name]} (om/props this)]
+      (dom/span #js {:style #js {:borderBottom "1px solid black" :marginLeft "4pt"}} name))))
 
-(defn increment-age*
-  [state-map id]
-  (update-in state-map (conj (person-ident id) :person/age) inc))
+(def ui-duty (om/factory Duty {:keyfn :db/id}))
 
-(defmutation set-liked
-  [{:keys [person-id yes-no]}]
-  (action [{:keys [state]}]
-    (swap! state (fn [s]
-                   (-> s
-                     (increment-age* person-id)
-                     (set-liked* person-id yes-no))))))
+(defui ^:once Job
+  static om/IQuery
+  (query [this] [:db/id :job/title {:job/duties (om/get-query Duty)}])
+  static om/Ident
+  (ident [this props] (job-ident props))
+  Object
+  (render [this]
+    (let [{:keys [db/id job/title job/duties] :as p} (om/props this)]
+      (dom/span nil
+        title ": " (map ui-duty duties)))))
+
+(def ui-job (om/factory Job {:keyfn :db/id}))
 
 (defui ^:once Person
-  static fc/InitialAppState
-  (initial-state [c {:keys [id name age]}] {:db/id id :person/name name :person/age age :tony-likes? false})
   static om/IQuery
-  (query [this] [:db/id :person/name :person/age :tony-likes?])
+  (query [this] [:ui/fetch-state :db/id :person/name :person/age {:person/job (om/get-query Job)}])
   static om/Ident
   (ident [this props] (person-ident props))
   Object
   (render [this]
-    (let [{:keys [db/id person/name person/age tony-likes?]} (om/props this)]
-      (dom/div nil
-        (dom/p nil (str "Name: " name))
-        (dom/p nil (str "Age: " age))
-        (dom/span nil
-          "Liked by Tony?")
-        (dom/input #js {:type    "checkbox"
-                        :onClick (fn [e] (om/transact! this `[(set-liked ~{:person-id id :yes-no (not tony-likes?)})]))
-                        :checked tony-likes?})))))
+    (let [{:keys [db/id person/name person/age person/job]} (om/props this)]
+      (b/row {}
+        (b/col {:xs 3} (dom/span nil name))
+        (b/col {:xs 3} (dom/span nil age))
+        (when job
+          (b/col {:xs 6}
+            (ui-job job)))))))
 
 (def ui-person (om/factory Person {:keyfn :db/id}))
 
 (defui ^:once PersonList
   static fc/InitialAppState
-  (initial-state [c params] {:people [(fc/get-initial-state Person {:id 1 :name "Job" :age 22})
-                                      (fc/get-initial-state Person {:id 2 :name "Sally" :age 62})
-                                      (fc/get-initial-state Person {:id 3 :name "Alex" :age 32})]})
+  (initial-state [c params]
+    {:people []})
   static om/IQuery
   (query [this] [{:people (om/get-query Person)}])
   static om/Ident
@@ -59,8 +65,18 @@
   Object
   (render [this]
     (let [{:keys [people]} (om/props this)]
-      (dom/div nil
-        (map ui-person people)))))
+      (b/panel {}
+        (b/panel-heading {}
+          (b/panel-title {} "People"))
+        (b/panel-body {}
+          (b/container-fluid nil
+            (b/row {}
+              (b/col {:xs 3} (dom/b nil "Name"))
+              (b/col {:xs 3} (dom/b nil "Age"))
+              (b/col {:xs 3} (dom/b nil "Job")))
+            (df/lazily-loaded
+              #(map ui-person %)
+              people)))))))
 
 (def ui-person-list (om/factory PersonList))
 
