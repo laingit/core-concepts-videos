@@ -9,7 +9,16 @@
 
   :profiles {:dev {:source-paths ["src/dev" "src/main" "src/cards"]
                    :dependencies [[binaryage/devtools "0.9.4"]
+                                  [fulcrologic/fulcro-sql "0.1.0-SNAPSHOT"]
+                                  [com.h2database/h2 "1.4.196"]
                                   [org.clojure/tools.namespace "0.3.0-alpha4"]
+
+                                  ; enables logging that we can control for everything from timbre
+                                  [org.slf4j/log4j-over-slf4j "1.7.25" :scope "provided"]
+                                  [org.slf4j/jul-to-slf4j "1.7.25" :scope "provided"]
+                                  [org.slf4j/jcl-over-slf4j "1.7.25" :scope "provided"]
+                                  [com.fzakaria/slf4j-timbre "0.3.7" :scope "provided"]
+
                                   [figwheel-sidecar "0.5.13" :exclusions [org.clojure/tools.nrepl]]
                                   [devcards "0.2.3" :exclusions [cljsjs/react cljsjs/react-dom]]]}}
 

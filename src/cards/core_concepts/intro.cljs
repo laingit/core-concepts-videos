@@ -16,15 +16,11 @@
    :fulcro       {:started-callback
                   (fn [app]
                     (df/load app :query/all-people client/Person
-                      {:target [:PERSON-LIST :singleton :people]})
-                    )}})
-
-
+                      {:without #{:job/duties}
+                       :target [:PERSON-LIST :singleton :people]}))}})
 
 
 (comment
-
-
   ; defcard-fulcro puts the application in the atom cardname-fulcro-app
   root-card-fulcro-app
 

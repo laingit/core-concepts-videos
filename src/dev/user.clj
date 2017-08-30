@@ -4,7 +4,8 @@
     [clojure.tools.namespace.repl :as tools-ns :refer [set-refresh-dirs]]
     [com.stuartsierra.component :as component]
     core-concepts.server
-    [figwheel-sidecar.system :as fig]))
+    [figwheel-sidecar.system :as fig]
+    [taoensso.timbre :as timbre]))
 
 ;;FIGWHEEL
 (def figwheel (atom nil))
@@ -56,8 +57,11 @@
     "Initialize the server and start it."
     ([] (go :dev))
     ([path] {:pre [(not @system) (not (started? @system))]}
-     (init path)
-     (start)))
+     (try
+       (init path)
+       (start)
+       (catch Exception e
+         (.printStackTrace e)))))
 
   (defn restart
     "Stop, refresh, and restart the server."
@@ -65,3 +69,6 @@
     (stop)
     (refresh :after 'user/go)))
 
+
+(comment
+  (timbre/set-level! :info))

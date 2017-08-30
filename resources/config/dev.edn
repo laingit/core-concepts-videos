@@ -1,1 +1,7 @@
-{:port 3001}
+{:port   3001
+ :sqldbm {:people {:hikaricp-config "sql/pool.properties"
+                   :driver          :h2
+                   :create-drop?    true
+                   :auto-migrate?   true
+                   :migrations      ["classpath:sql/migrations"]}}}
+

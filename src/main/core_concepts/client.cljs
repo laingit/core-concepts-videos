@@ -33,7 +33,10 @@
   (render [this]
     (let [{:keys [db/id job/title job/duties] :as p} (om/props this)]
       (dom/span nil
-        title ": " (map ui-duty duties)))))
+        title ": "
+        (if (vector? duties)
+          (map ui-duty duties)
+          (dom/button #js {:onClick #(df/load-field this :job/duties)} "Show Duties"))))))
 
 (def ui-job (om/factory Job {:keyfn :db/id}))
 
@@ -56,8 +59,7 @@
 
 (defui ^:once PersonList
   static fc/InitialAppState
-  (initial-state [c params]
-    {:people []})
+  (initial-state [c params] {:people []})
   static om/IQuery
   (query [this] [{:people (om/get-query Person)}])
   static om/Ident
